@@ -2,7 +2,7 @@
 
 ## MacOS环境
 
-1. 进入Anaconda下载官网(https://www.anaconda.com/download/)，选择**macOS**，然后选择**Python 3.6**版本
+1. 进入[Anaconda下载官网](https://www.anaconda.com/download/)，选择**macOS**，然后选择**Python 3.6**版本
 
 2. 这里有两种安装方式，一种是图形界面安装，另一种是命令行安装，这里我们选择图形界面安装，点击绿色的图标**Download**
 
@@ -31,7 +31,7 @@
 
 ## Windows环境
 
-1. 进入Anaconda下载官网(https://www.anaconda.com/download/)，选择**Windows**，然后选择**Python 3.6**版本
+1. 进入[Anaconda下载官网](https://www.anaconda.com/download/)，选择**Windows**，然后选择**Python 3.6**版本
 
 2. Windows对应的安装方式只有图形界面安装，根据自己计算机和系统的位数选择32位或64位安装包下载即可
 

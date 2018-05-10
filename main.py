@@ -1,13 +1,14 @@
 
-#-------------------------------------------------------------------------------
-# Name:        Object bounding box label tool
+#--------------------------------------------------------------------------
+# Name:        Person bounding box label and attribute tool
 # Purpose:     Label object bboxes for ImageNet Detection data
 # Created:     06/06/2014
 # Rectified:   09/29/2017
 #
-#-------------------------------------------------------------------------------
+#--------------------------------------------------------------------------
 from __future__ import division
 from tkinter import *
+from tkinter import ttk
 from PIL import Image as pilimg 
 from PIL import ImageTk
 import os
@@ -21,9 +22,6 @@ COLORS = ['red', 'blue', 'orange', 'yellow', 'pink', 'cyan', 'green', 'black']
 SIZE = 256, 256
 # 指定缩放后的图像大小
 DEST_SIZE = 1200, 900
-
-classLabels = ['1', '2', '3', '4', '5', '6', '7', '8']
-hardLabels = ['easy', 'hard', 'very']
 
 class LabelTool():
     def __init__(self, master):
@@ -58,8 +56,35 @@ class LabelTool():
         self.bboxList = []
         self.hl = None
         self.vl = None
-        self.currentClass = '1'
-        self.currentHard = 'easy'
+
+        # all things that need to be writen to txt
+        self.current_id = '1'
+        self.current_class = 'person'
+        self.current_difficult = 'easy'
+        self.current_age = 0  # 3 choices
+        self.current_gender = 0  # 2 choices
+        self.current_direction = 0  # 3 choices
+        self.current_sleeve = 0  # 2 choices
+        self.current_coat = 0  # 5 choices
+        self.current_pants_style = 0  # 3 choices
+        self.current_pants = 0  # 3 choices
+        self.current_shoes = 0  # 4 choices
+        self.current_hat = 0  # bool
+        self.current_glasses = 0  # bool
+        self.current_handbag = 0  # bool
+        self.current_shoulderbag = 0  # bool
+        self.current_backpack = 0  # bool
+        self.current_front_res = 0  # bool
+        self.current_longcoat = 0  # bool
+        self.current_longhair = 0  # bool
+
+        self.attributes_dict = {
+        '行人': 'person', '人脸': 'face', '简单': 'easy', '困难': 'hard',
+        '小于18岁': 0, '18~60岁': 1, '大于60岁': 2, '男': 0, '女': 1, '正面': 0,
+        '侧面': 1, '背面': 2, '长袖': 0, '短袖': 1, '都不是': 0, '条纹': 1,
+        '图案': 2, '格子': 3, '披肩或马甲': 4, '长裤': 1, '短裤': 2, '裙子': 3,
+        '靴子': 1, '皮鞋': 2, '运动鞋': 3}
+
 
         # ----------------- GUI stuff ---------------------
         # dir entry & load
@@ -86,46 +111,11 @@ class LabelTool():
         self.btnDel.grid(row = 3, column = 2, sticky = W+E+N)
         self.btnClear = Button(self.frame, text = 'ClearAll',
             command = self.clearBBox)
-        self.btnClear.grid(row=4, column=2, sticky=W+E+N)
-        
-        #select class type
-        self.classPanel = Frame(self.frame)
-        self.classPanel.grid(row=5, column=0, columnspan=10, sticky=W+E)
-        label = Label(self.classPanel, text='person:')
-        label.grid(row=5, column=1, sticky = W+N)
-       
-        self.classbox = Listbox(self.classPanel, width=4, height=2)
-        self.classbox.grid(row=5,column=2)
-        self.classbox.insert(0, '1')
-        self.classbox.itemconfig(0, fg=COLORS[0])
-        for each in range(len(classLabels)):
-            function = 'select' + classLabels[each]
-            print(classLabels[each])
-            btnMat = Button(self.classPanel, text=classLabels[each],
-                command=getattr(self, function))
-            btnMat.grid(row = 5, column = each + 3)
-        
-        #select hard type
-        self.hardPanel = Frame(self.frame)
-        self.hardPanel.grid(row=5, column=2, columnspan=4, sticky=W+E)
-        hard = Label(self.hardPanel, text='hard:')
-        hard.grid(row=5, column=3, sticky = W+N)
-       
-        self.hard = Listbox(self.hardPanel, width=4, height=2)
-        self.hard.grid(row=5,column=4)
-        self.hard.insert(0, 'easy')
-        self.hard.itemconfig(0, fg=COLORS[1])
-        for each in range(len(hardLabels)):
-            function = 'choose_' + hardLabels[each]
-            print(classLabels[each])
-            btnMat = Button(self.hardPanel, text=hardLabels[each],
-                command=getattr(self, function))
-            btnMat.grid(row = 5, column = each + 5)
-        
+        self.btnClear.grid(row=4, column=2, sticky=W+E+N) 
         
         # control panel for image navigation
         self.ctrPanel = Frame(self.frame)
-        self.ctrPanel.grid(row = 6, column = 1, columnspan = 2, sticky = W+E)
+        self.ctrPanel.grid(row = 8, column = 1, columnspan = 2, sticky = W+E)
         self.prevBtn = Button(self.ctrPanel, text='<< Prev', width = 10, 
             command = self.prevImage)
         self.prevBtn.pack(side = LEFT, padx = 5, pady = 3)
@@ -173,12 +163,6 @@ class LabelTool():
             s = r'D:\workspace\python\labelGUI'
         '''
         self.parent.focus()
-        #self.category = askdirectory()
-##        if not os.path.isdir(s):
-##            tkMessageBox.showerror("Error!", message = "The specified dir doesn't exist!")
-##            return
-        # get image list
-        # self.imageDir = os.path.join(r'./Images', '%d' %(self.category))
         self.imageDir = askdirectory()
         self.imageList = glob.glob(os.path.join(self.imageDir, '*.jpg'))
         self.entry.insert(0, self.imageDir)
@@ -218,7 +202,8 @@ class LabelTool():
             new_size = int(r * im.size[0]), int(r * im.size[1])
             self.tmp.append(im.resize(new_size, pilimg.ANTIALIAS))
             self.egList.append(ImageTk.PhotoImage(self.tmp[-1]))
-            self.egLabels[i].config(image=self.egList[-1], width=SIZE[0], height=SIZE[1])
+            self.egLabels[i].config(image=self.egList[-1], width=SIZE[0],
+                height=SIZE[1])
 
 
         # default to the 1st image in the collection
@@ -246,31 +231,16 @@ class LabelTool():
         self.progLabel.config(text = "%04d/%04d" %(self.cur, self.total))
 
         # 载入图片以后的键盘响应
-        self.parent.bind("<Escape>", self.cancelBBox)  # press <Espace> to cancel current bbox
+        # press <Espace> to cancel current bbox
+        self.parent.bind("<Escape>", self.cancelBBox)
         self.parent.bind("s", self.cancelBBox)
-        self.parent.bind("a", self.prevImage) # press 'a' to go backforward
-        self.parent.bind("d", self.nextImage) # press 'd' to go forward
-        self.parent.bind("1", self.select1)
-        self.parent.bind("2", self.select2)
-        self.parent.bind("3", self.select3)
-        self.parent.bind("4", self.select4)
-        self.parent.bind("5", self.select5)
-        self.parent.bind("6", self.select6)
-        self.parent.bind("7", self.select7)
-        self.parent.bind("8", self.select8)
-        self.parent.bind("e", self.choose_easy)
-        self.parent.bind("h", self.choose_hard)
-        self.parent.bind("v", self.choose_very)
+        self.parent.bind("a", self.prevImage)  # press 'a' to go backforward
+        self.parent.bind("d", self.nextImage)  # press 'd' to go forward
 
         # 每次load进新的图片时初始化person和hard
-        self.currentClass = '1'
-        self.currentHard = 'easy'
-        self.classbox.delete(0,END)
-        self.classbox.insert(0, '1')
-        self.classbox.itemconfig(0, fg=COLORS[0])
-        self.hard.delete(0,END)
-        self.hard.insert(0, 'easy')
-        self.hard.itemconfig(0, fg=COLORS[1])
+        self.current_id = '1'
+        self.current_difficult = 'easy'
+        self.current_class = 'person'
 
         # load labels
         self.clearBBox()
@@ -317,7 +287,7 @@ class LabelTool():
                 ty0 = int(bbox[-3] * self.truesize[1]/DEST_SIZE[1])
                 tx1 = int(bbox[-2] * self.truesize[0]/DEST_SIZE[0])
                 ty1 = int(bbox[-1] * self.truesize[1]/DEST_SIZE[1])
-                tbbox = [bbox[0], bbox[1], tx0, ty0, tx1, ty1]
+                tbbox = bbox[:-4] + (tx0, ty0, tx1, ty1)
                 f.write(' '.join(map(str, tbbox)) + '\n')
         print('Image No. %d saved' %(self.cur))
 
@@ -325,7 +295,6 @@ class LabelTool():
     def mouseClick(self, event):
         if self.STATE['click'] == 0:
             self.STATE['x'], self.STATE['y'] = event.x, event.y
-            #self.STATE['x'], self.STATE['y'] = self.imgSize[0], self.imgSize[1]
         else:
             x1, x2 = min(self.STATE['x'], event.x), max(self.STATE['x'],
                 event.x)
@@ -341,23 +310,10 @@ class LabelTool():
             tx1 = int(x2 * self.truesize[0]/DEST_SIZE[0])
             ty1 = int(y2 * self.truesize[1]/DEST_SIZE[1])
 
-            self.bboxList.append((self.currentClass, self.currentHard, 
-                x1, y1, x2, y2))
-            self.bboxIdList.append(self.bboxId)
-            self.bboxId = None
-            self.listbox.insert(END, 'p%s %s (%d, %d) -> (%d, %d)' %\
-                (self.currentClass, self.currentHard, tx0, ty0, tx1, ty1))
-            self.listbox.itemconfig(len(self.bboxIdList) - 1, 
-                fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+            tbbox = (tx0, ty0, tx1, ty1)
+            bbox = (x1, y1, x2, y2)
 
-            # 每画一个框personID自动加1
-            if self.currentClass == '8':
-                self.currentClass = '2'
-            else:
-                self.currentClass = str(int(self.currentClass) + 1)
-            self.classbox.delete(0,END)
-            self.classbox.insert(0, self.currentClass)
-            self.classbox.itemconfig(0, fg=COLORS[0])
+            self.pop_new_window(tbbox, bbox)
 
         self.STATE['click'] = 1 - self.STATE['click']
 
@@ -402,72 +358,6 @@ class LabelTool():
         self.listbox.delete(0, len(self.bboxList))
         self.bboxIdList = []
         self.bboxList = []
-        
-    def select1(self, event=None):
-        self.currentClass = '1'
-        self.classbox.delete(0,END)
-        self.classbox.insert(0, '1')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-    
-    def select2(self, event=None):
-        self.currentClass = '2'    
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '2')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-    
-    def select3(self, event=None):
-        self.currentClass = '3'    
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '3')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-        
-    def select4(self, event=None):
-        self.currentClass = '4'    
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '4')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-        
-    def select5(self, event=None):
-        self.currentClass = '5'
-        self.classbox.delete(0,END)
-        self.classbox.insert(0, '5')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-        
-    def select6(self, event=None):
-        self.currentClass = '6'
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '6')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-        
-    def select7(self, event=None):
-        self.currentClass = '7'    
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '7')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-        
-    def select8(self, event=None):
-        self.currentClass = '8'    
-        self.classbox.delete(0,END)    
-        self.classbox.insert(0, '8')
-        self.classbox.itemconfig(0,fg = COLORS[0])
-
-    def choose_easy(self, event=None):
-        self.currentHard = 'easy'
-        self.hard.delete(0,END)
-        self.hard.insert(0, 'easy')
-        self.hard.itemconfig(0,fg = COLORS[1])
-
-    def choose_hard(self, event=None):
-        self.currentHard = 'hard'
-        self.hard.delete(0,END)
-        self.hard.insert(0, 'hard')
-        self.hard.itemconfig(0,fg = COLORS[1])
-
-    def choose_very(self, event=None):
-        self.currentHard = 'very'
-        self.hard.delete(0,END)
-        self.hard.insert(0, 'very')
-        self.hard.itemconfig(0,fg = COLORS[1])
 
     def prevImage(self, event=None):
         self.saveImage()
@@ -488,12 +378,210 @@ class LabelTool():
             self.cur = idx
             self.loadImage()
 
-##    def setImage(self, imagepath = r'test2.png'):
-##        self.img = Image.open(imagepath)
-##        self.tkimg = ImageTk.PhotoImage(self.img)
-##        self.mainPanel.config(width = self.tkimg.width())
-##        self.mainPanel.config(height = self.tkimg.height())
-##        self.mainPanel.create_image(0, 0, image = self.tkimg, anchor=NW)
+    def pop_new_window(self, tbbox, bbox):
+
+        def complete_choose():
+            # set value for each box
+            self.current_id = id_chosen.get()
+            self.current_class = self.attributes_dict[clas_chosen.get()]
+            self.current_difficult = self.attributes_dict[
+                difficulty_chosen.get()]
+            self.current_age = self.attributes_dict[age_chosen.get()]
+            self.current_gender = self.attributes_dict[gender_chosen.get()]
+            self.current_direction = self.attributes_dict[
+                direnction_chosen.get()]
+            self.current_sleeve = self.attributes_dict[sleeve_chosen.get()]
+            self.current_coat = self.attributes_dict[coat_chosen.get()]
+            self.current_pants_style = self.attributes_dict[
+                pants_style_chosen.get()]
+            self.current_pants = self.attributes_dict[pants_chosen.get()]
+            self.current_shoes = self.attributes_dict[shoes_chosen.get()]
+            # Add to bboxList
+            all_attributes = (
+                self.current_id, self.current_class, self.current_difficult,
+                self.current_age, self.current_gender, self.current_direction,
+                self.current_sleeve, self.current_coat,
+                self.current_pants_style, self.current_pants,
+                self.current_shoes, self.current_hat, self.current_glasses,
+                self.current_handbag, self.current_shoulderbag,
+                self.current_backpack, self.current_front_res,
+                self.current_longcoat, self.current_longhair, x1, y1, x2, y2)
+            self.bboxList.append(all_attributes)
+            self.bboxIdList.append(self.bboxId)
+            self.bboxId = None
+            self.listbox.insert(END, 'p%s %s (%d, %d) -> (%d, %d)' %\
+                (self.current_id, self.current_class, tx0, ty0, tx1, ty1))
+            self.listbox.itemconfig(len(self.bboxIdList) - 1, 
+                fg = COLORS[(len(self.bboxIdList) - 1) % len(COLORS)])
+            info_window.destroy()
+
+        tx0, ty0, tx1, ty1 = tbbox
+        x1, y1, x2, y2 = bbox
+
+        info_window = Toplevel(self.parent)
+        info_window.geometry('450x300')
+        info_window.title('选择属性')
+
+        ttk.Label(info_window, text="ID").grid(column=0, row=0)
+        id_num = StringVar()
+        id_chosen = ttk.Combobox(info_window, width=12, textvariable=id_num,
+            state='readonly')
+        id_chosen['values'] = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        id_chosen.grid(column=1, row=0)
+        id_chosen.current(0)
+
+        ttk.Label(info_window, text="种类").grid(column=2, row=0)
+        clas = StringVar()
+        clas_chosen = ttk.Combobox(info_window, width=12, textvariable=clas,
+            state='readonly')
+        clas_chosen['values'] = ('行人', '人脸')
+        clas_chosen.grid(column=3, row=0)
+        clas_chosen.current(0)
+
+        ttk.Label(info_window, text="难度").grid(column=0, row=1)
+        difficulty = StringVar()
+        difficulty_chosen = ttk.Combobox(info_window, width=12,
+            textvariable=difficulty, state='readonly')
+        difficulty_chosen['values'] = ('简单', '困难')
+        difficulty_chosen.grid(column=1, row=1)
+        difficulty_chosen.current(0)
+
+        ttk.Label(info_window, text="年龄").grid(column=2, row=1)
+        age = StringVar()
+        age_chosen = ttk.Combobox(info_window, width=12, textvariable=age,
+            state='readonly')
+        age_chosen['values'] = ('小于18岁', '18~60岁', '大于60岁')
+        age_chosen.grid(column=3, row=1)
+        age_chosen.current(0)
+
+        ttk.Label(info_window, text="性别").grid(column=0, row=2)
+        gender = StringVar()
+        gender_chosen = ttk.Combobox(info_window, width=12,
+            textvariable=gender, state='readonly')
+        gender_chosen['values'] = ('男', '女')
+        gender_chosen.grid(column=1, row=2)
+        gender_chosen.current(0)
+
+        ttk.Label(info_window, text="朝向").grid(column=2, row=2)
+        direnction = StringVar()
+        direnction_chosen = ttk.Combobox(info_window, width=12,
+            textvariable=direnction, state='readonly')
+        direnction_chosen['values'] = ('正面', '侧面', '背面')
+        direnction_chosen.grid(column=3, row=2)
+        direnction_chosen.current(0)
+
+        ttk.Label(info_window, text="袖子").grid(column=0, row=3)
+        sleeve = StringVar()
+        sleeve_chosen = ttk.Combobox(info_window, width=12,
+            textvariable=sleeve, state='readonly')
+        sleeve_chosen['values'] = ('长袖', '短袖')
+        sleeve_chosen.grid(column=1, row=3)
+        sleeve_chosen.current(0)
+
+        ttk.Label(info_window, text="上衣装饰").grid(column=2, row=3)
+        coat = StringVar()
+        coat_chosen = ttk.Combobox(info_window, width=12, textvariable=coat,
+            state='readonly')
+        coat_chosen['values'] = ('都不是', '条纹', '图案', '格子', '披肩或马甲')
+        coat_chosen.grid(column=3, row=3)
+        coat_chosen.current(0)
+
+        ttk.Label(info_window, text="下身装饰").grid(column=0, row=4)
+        pants_style = StringVar()
+        pants_style_chosen = ttk.Combobox(info_window, width=12,
+            textvariable=pants_style, state='readonly')
+        pants_style_chosen['values'] = ('都不是', '条纹', '图案')
+        pants_style_chosen.grid(column=1, row=4)
+        pants_style_chosen.current(0)
+
+        ttk.Label(info_window, text="裤子类型").grid(column=2, row=4)
+        pants = StringVar()
+        pants_chosen = ttk.Combobox(info_window, width=12, textvariable=pants,
+            state='readonly')
+        pants_chosen['values'] = ('都不是', '长裤', '短裤', '裙子')
+        pants_chosen.grid(column=3, row=4)
+        pants_chosen.current(0)
+
+        ttk.Label(info_window, text="鞋子类型").grid(column=0, row=5)
+        shoes = StringVar()
+        shoes_chosen = ttk.Combobox(info_window, width=12, textvariable=shoes,
+            state='readonly')
+        shoes_chosen['values'] = ('都不是', '靴子', '皮鞋', '运动鞋')
+        shoes_chosen.grid(column=1, row=5)
+        shoes_chosen.current(0)
+
+        ttk.Label(info_window, text="其他属性").grid(column=0, row=6)
+
+        self.hat = IntVar()
+        check_hat = Checkbutton(info_window, text="帽子", variable=self.hat,
+            command=self.check_hat_button)
+        check_hat.grid(column=0, row=7, sticky=W)
+
+        self.glasses = IntVar()
+        check_glasses = Checkbutton(info_window, text="眼镜",
+            variable=self.glasses, command=self.check_glasses_button)
+        check_glasses.grid(column=1, row=7, sticky=W)
+
+        self.handbag = IntVar()
+        check_handbag = Checkbutton(info_window, text="手提包",
+            variable=self.handbag, command=self.check_handbag_button)
+        check_handbag.grid(column=2, row=7, sticky=W)
+
+        self.shoulderbag = IntVar()
+        check_shoulderbag = Checkbutton(info_window, text="单肩包",
+            variable=self.shoulderbag, command=self.check_shoulderbag_button)
+        check_shoulderbag.grid(column=3, row=7, sticky=W)
+
+        self.backpack = IntVar()
+        check_backpack = Checkbutton(info_window, text="背包",
+            variable=self.backpack, command=self.check_backpack_button)
+        check_backpack.grid(column=0, row=8, sticky=W)
+
+        self.front_res = IntVar()
+        check_front_res = Checkbutton(info_window, text="身前拿物品",
+            variable=self.front_res, command=self.check_front_res_button)
+        check_front_res.grid(column=1, row=8, sticky=W)
+
+        self.longcoat = IntVar()
+        check_longcoat = Checkbutton(info_window, text="长大衣",
+            variable=self.longcoat, command=self.check_longcoat_button)
+        check_longcoat.grid(column=2, row=8, sticky=W)
+
+        self.longhair = IntVar()
+        check_longhair = Checkbutton(info_window, text="长发",
+            variable=self.longhair, command=self.check_longhair_button)
+        check_longhair.grid(column=3, row=8, sticky=W)
+
+        # ==================================================
+        confirm_button = Button(info_window, text='确定', height=3, width=6,
+            command=complete_choose)
+        # confirm_button.grid(column=0, row=9, sticky=W)
+        confirm_button.place(x=150, y=250)
+
+    def check_hat_button(self):
+        self.current_hat = self.hat.get()
+
+    def check_glasses_button(self):
+        self.current_glasses = self.glasses.get()
+
+    def check_handbag_button(self):
+        self.current_handbag = self.handbag.get()
+
+    def check_shoulderbag_button(self):
+        self.current_shoulderbag = self.shoulderbag.get()
+
+    def check_backpack_button(self):
+        self.current_backpack = self.backpack.get()
+
+    def check_front_res_button(self):
+        self.current_front_res = self.front_res.get()
+
+    def check_longcoat_button(self):
+        self.current_longcoat = self.longcoat.get()
+
+    def check_longhair_button(self):
+        self.current_longhair = self.longhair.get()
+
 
 if __name__ == '__main__':
     root = Tk()

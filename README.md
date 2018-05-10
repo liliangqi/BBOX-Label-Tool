@@ -1,6 +1,6 @@
 # 配置所需软件
 
-##MacOS环境
+## MacOS环境
 
 1. 进入Anaconda下载官网(https://www.anaconda.com/download/)，选择**macOS**，然后选择**Python 3.6**版本
 
@@ -29,7 +29,7 @@
 
 ![](http://oxg3si0yz.bkt.clouddn.com/3.png)
 
-##Windows环境
+## Windows环境
 
 1. 进入Anaconda下载官网(https://www.anaconda.com/download/)，选择**Windows**，然后选择**Python 3.6**版本
 
@@ -97,7 +97,7 @@
 
 ---
 
-#数据集结构
+# 数据集结构
 
 　　原始数据集为mp4视频数据，目前已经全部转为jpg图片格式，结构如下图所示
 

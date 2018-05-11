@@ -3,7 +3,7 @@
 # Name:        Person bounding box label and attribute tool
 # Purpose:     Label object bboxes for ImageNet Detection data
 # Created:     06/06/2014
-# Rectified:   09/29/2017
+# Rectified:   05/11/2018  by Liangqi Li
 #
 #--------------------------------------------------------------------------
 from __future__ import division

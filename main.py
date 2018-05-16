@@ -69,6 +69,7 @@ class LabelTool():
         self.current_pants_style = 0  # 3 choices
         self.current_pants = 0  # 3 choices
         self.current_shoes = 0  # 4 choices
+        self.current_haircut = 0  # 3 choices
         self.current_hat = 0  # bool
         self.current_glasses = 0  # bool
         self.current_handbag = 0  # bool
@@ -76,14 +77,15 @@ class LabelTool():
         self.current_backpack = 0  # bool
         self.current_front_res = 0  # bool
         self.current_longcoat = 0  # bool
-        self.current_longhair = 0  # bool
+        self.current_phone = 0  # bool
 
         self.attributes_dict = {
         '行人': 'person', '人脸': 'face', '简单': 'easy', '困难': 'hard',
         '小于18岁': 0, '18~60岁': 1, '大于60岁': 2, '男': 0, '女': 1, '正面': 0,
         '侧面': 1, '背面': 2, '长袖': 0, '短袖': 1, '都不是': 0, '条纹': 1,
         '图案': 2, '格子': 3, '披肩或马甲': 4, '长裤': 1, '短裤': 2, '裙子': 3,
-        '靴子': 1, '皮鞋': 2, '运动鞋': 3}
+        '靴子': 1, '皮鞋': 2, '运动鞋': 3, '短发': 0, '长发': 1, '光头': 2,
+        '戴帽子': 3}
 
 
         # ----------------- GUI stuff ---------------------
@@ -396,16 +398,17 @@ class LabelTool():
                 pants_style_chosen.get()]
             self.current_pants = self.attributes_dict[pants_chosen.get()]
             self.current_shoes = self.attributes_dict[shoes_chosen.get()]
+            self.current_haircut = self.attributes_dict[haircut_chosen.get()]
             # Add to bboxList
             all_attributes = (
                 self.current_id, self.current_class, self.current_difficult,
                 self.current_age, self.current_gender, self.current_direction,
                 self.current_sleeve, self.current_coat,
                 self.current_pants_style, self.current_pants,
-                self.current_shoes, self.current_hat, self.current_glasses,
+                self.current_shoes, self.current_haircut, self.current_glasses,
                 self.current_handbag, self.current_shoulderbag,
                 self.current_backpack, self.current_front_res,
-                self.current_longcoat, self.current_longhair, x1, y1, x2, y2)
+                self.current_longcoat, self.current_phone, x1, y1, x2, y2)
             self.bboxList.append(all_attributes)
             self.bboxIdList.append(self.bboxId)
             self.bboxId = None
@@ -510,56 +513,56 @@ class LabelTool():
         shoes_chosen.grid(column=1, row=5)
         shoes_chosen.current(0)
 
-        ttk.Label(info_window, text="其他属性").grid(column=0, row=6)
+        ttk.Label(info_window, text="发型").grid(column=2, row=5)
+        haircut = StringVar()
+        haircut_chosen = ttk.Combobox(info_window, width=12, textvariable=haircut,
+            state='readonly')
+        haircut_chosen['values'] = ('短发', '长发', '光头', '戴帽子')
+        haircut_chosen.grid(column=3, row=5)
+        haircut_chosen.current(0)
 
-        self.hat = IntVar()
-        check_hat = Checkbutton(info_window, text="帽子", variable=self.hat,
-            command=self.check_hat_button)
-        check_hat.grid(column=0, row=7, sticky=W)
+        ttk.Label(info_window, text="其他属性").grid(column=0, row=6)
 
         self.glasses = IntVar()
         check_glasses = Checkbutton(info_window, text="眼镜",
             variable=self.glasses, command=self.check_glasses_button)
-        check_glasses.grid(column=1, row=7, sticky=W)
+        check_glasses.grid(column=0, row=7, sticky=W)
 
         self.handbag = IntVar()
         check_handbag = Checkbutton(info_window, text="手提包",
             variable=self.handbag, command=self.check_handbag_button)
-        check_handbag.grid(column=2, row=7, sticky=W)
+        check_handbag.grid(column=1, row=7, sticky=W)
 
         self.shoulderbag = IntVar()
         check_shoulderbag = Checkbutton(info_window, text="单肩包",
             variable=self.shoulderbag, command=self.check_shoulderbag_button)
-        check_shoulderbag.grid(column=3, row=7, sticky=W)
+        check_shoulderbag.grid(column=2, row=7, sticky=W)
 
         self.backpack = IntVar()
         check_backpack = Checkbutton(info_window, text="背包",
             variable=self.backpack, command=self.check_backpack_button)
-        check_backpack.grid(column=0, row=8, sticky=W)
+        check_backpack.grid(column=3, row=7, sticky=W)
 
         self.front_res = IntVar()
         check_front_res = Checkbutton(info_window, text="身前拿物品",
             variable=self.front_res, command=self.check_front_res_button)
-        check_front_res.grid(column=1, row=8, sticky=W)
+        check_front_res.grid(column=0, row=8, sticky=W)
 
         self.longcoat = IntVar()
         check_longcoat = Checkbutton(info_window, text="长大衣",
             variable=self.longcoat, command=self.check_longcoat_button)
-        check_longcoat.grid(column=2, row=8, sticky=W)
+        check_longcoat.grid(column=1, row=8, sticky=W)
 
-        self.longhair = IntVar()
-        check_longhair = Checkbutton(info_window, text="长发",
-            variable=self.longhair, command=self.check_longhair_button)
-        check_longhair.grid(column=3, row=8, sticky=W)
+        self.phone = IntVar()
+        check_phone = Checkbutton(info_window, text="打电话",
+            variable=self.phone, command=self.check_phone_button)
+        check_phone.grid(column=2, row=8, sticky=W)
 
         # ==================================================
         confirm_button = Button(info_window, text='确定', height=3, width=6,
             command=complete_choose)
         # confirm_button.grid(column=0, row=9, sticky=W)
         confirm_button.place(x=150, y=250)
-
-    def check_hat_button(self):
-        self.current_hat = self.hat.get()
 
     def check_glasses_button(self):
         self.current_glasses = self.glasses.get()
@@ -579,8 +582,8 @@ class LabelTool():
     def check_longcoat_button(self):
         self.current_longcoat = self.longcoat.get()
 
-    def check_longhair_button(self):
-        self.current_longhair = self.longhair.get()
+    def check_phone_button(self):
+        self.current_phone = self.phone.get()
 
 
 if __name__ == '__main__':
